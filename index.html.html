@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>VIRTUAL GALLERY | Interactive Exhibition</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <!-- Google Fonts 추가 (전시회 느낌의 타이포그래피) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+      :root {
+        --bg-color: #0b0c10;
+        --card-bg: #1f2833;
+        --accent-color: #c5a880;
+        --text-primary: #f4f4f4;
+        --text-secondary: #a3a8b0;
+        --border-color: rgba(197, 168, 128, 0.2);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: 'Noto Sans KR', sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+      }
+
+      /* 헤더 디자인 */
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem 3rem;
+        background: rgba(11, 12, 16, 0.9);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .gallery-brand {
+        font-family: 'Cinzel', serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        color: var(--accent-color);
+        text-transform: uppercase;
+      }
+
+      .gallery-nav span {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        padding: 6px 14px;
+        border-radius: 20px;
+        letter-spacing: 1px;
+      }
+
+      /* 메인 전시 영역 */
+      main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .exhibition-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .exhibition-title {
+        font-family: 'Cinzel', serif;
+        font-size: 2.2rem;
+        letter-spacing: 3px;
+        margin-bottom: 0.5rem;
+      }
+
+      .exhibition-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        font-weight: 300;
+      }
+
+      /* 갤러리 프레임 (Unity Canvas Wrapper) */
+      .gallery-frame {
+        position: relative;
+        width: 100%;
+        max-width: 1100px;
+        aspect-ratio: 16 / 10;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(197, 168, 128, 0.1);
+        border: 1px solid var(--border-color);
+      }
+
+      #unity-canvas {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+      }
+
+      /* 커스텀 로딩 오버레이 */
+      #unity-loading-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg-color);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+        transition: opacity 0.5s ease;
+      }
+
+      .loading-title {
+        font-family: 'Cinzel', serif;
+        font-size: 1.2rem;
+        letter-spacing: 4px;
+        color: var(--accent-color);
+        margin-bottom: 1.5rem;
+      }
+
+      .progress-container {
+        width: 240px;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      #unity-progress-bar-full {
+        width: 0%;
+        height: 100%;
+        background: var(--accent-color);
+        transition: width 0.2s ease;
+      }
+
+      .loading-status {
+        margin-top: 1rem;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        letter-spacing: 1px;
+      }
+
+      /* 갤러리 컨트롤 및 하단 정보 바 */
+      .gallery-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        max-width: 1100px;
+        margin-top: 1rem;
+        padding: 0.5rem 0.5rem;
+      }
+
+      .controls-hint {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        display: flex;
+        gap: 12px;
+      }
+
+      .controls-hint span {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .fullscreen-btn {
+        background: transparent;
+        border: 1px solid var(--accent-color);
+        color: var(--accent-color);
+        padding: 8px 18px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: 'Cinzel', serif;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+      }
+
+      .fullscreen-btn:hover {
+        background: var(--accent-color);
+        color: var(--bg-color);
+      }
+
+      /* 경고/에러 메시지 팝업 */
+      #unity-warning {
+        position: absolute;
+        top: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 20;
+        width: 90%;
+        max-width: 600px;
+      }
+
+      /* 푸터 */
+      footer {
+        padding: 2rem 3rem;
+        text-align: center;
+        border-top: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        margin-top: auto;
+      }
+
+      @media (max-width: 768px) {
+        header { padding: 1rem 1.5rem; }
+        .exhibition-title { font-size: 1.5rem; }
+        .gallery-frame { aspect-ratio: 4 / 3; }
+        .controls-hint { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- 헤더 영역 -->
+    <header>
+      <div class="gallery-brand">ART & SPACE</div>
+      <div class="gallery-nav">
+        <span>ONLINE EXHIBITION</span>
+      </div>
+    </header>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <main>
+      <div class="exhibition-header">
+        <h1 class="exhibition-title">TEST 1234 : VIRTUAL SPACE</h1>
+        <p class="exhibition-subtitle">마우스와 키보드를 사용하여 3D 전시 공간을 감상해 보세요.</p>
+      </div>
+
+      <!-- Unity 캔버스 프레임 -->
+      <div class="gallery-frame" id="unity-container">
+        <canvas id="unity-canvas" tabindex="-1"></canvas>
+        
+        <!-- 로딩 오버레이 -->
+        <div id="unity-loading-bar">
+          <div class="loading-title">LOADING GALLERY</div>
+          <div class="progress-container">
+            <div id="unity-progress-bar-full"></div>
+          </div>
+          <div class="loading-status" id="loading-text">리소스 준비 중...</div>
+        </div>
+
+        <!-- 에러/경고 안내 바 -->
+        <div id="unity-warning"></div>
+      </div>
+
+      <!-- 하단 컨트롤 바 -->
+      <div class="gallery-controls">
+        <div class="controls-hint">
+          <span>이동: WASD / 방향키</span>
+          <span>시점 전환: 마우스 드래그</span>
+        </div>
+        <button class="fullscreen-btn" id="unity-fullscreen-button">FULLSCREEN ⛶</button>
+      </div>
+    </main>
+
+    <!-- 푸터 영역 -->
+    <footer>
+      <p>© 2026 DefaultCompany. All rights reserved. Powered by Unity WebGL.</p>
+    </footer>
+
+    <!-- Unity 스크립트 로직 -->
+    <script>
+      const canvas = document.querySelector("#unity-canvas");
+      const loadingBar = document.querySelector("#unity-loading-bar");
+      const progressBarFull = document.querySelector("#unity-progress-bar-full");
+      const loadingText = document.querySelector("#loading-text");
+      const warningBanner = document.querySelector("#unity-warning");
+
+      function unityShowBanner(msg, type) {
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        const div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type === 'error') {
+          div.style = 'background: rgba(220, 53, 69, 0.9); color: white; padding: 12px 20px; border-radius: 6px; margin-bottom: 10px; font-size: 0.85rem;';
+        } else {
+          if (type === 'warning') div.style = 'background: rgba(255, 193, 7, 0.9); color: #212529; padding: 12px 20px; border-radius: 6px; margin-bottom: 10px; font-size: 0.85rem;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      const buildUrl = "Build";
+      const loaderUrl = buildUrl + "/Build.loader.js";
+      const config = {
+        arguments: [],
+        dataUrl: buildUrl + "/Build.data.br",
+        frameworkUrl: buildUrl + "/Build.framework.js.br",
+        codeUrl: buildUrl + "/Build.wasm.br",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "test1234",
+        productVersion: "0.1.0",
+        showBanner: unityShowBanner,
+      };
+
+      // 모바일 지원 레이아웃 대응
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        document.querySelector("#unity-container").classList.add("unity-mobile");
+      }
+
+      loadingBar.style.display = "flex";
+
+      const script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          const percent = Math.round(100 * progress);
+          progressBarFull.style.width = percent + "%";
+          loadingText.textContent = `갤러리 로딩 중... ${percent}%`;
+        }).then((unityInstance) => {
+          // 로딩 완료 애니메이션 후 숨기기
+          loadingBar.style.opacity = "0";
+          setTimeout(() => {
+            loadingBar.style.display = "none";
+          }, 500);
+
+          document.querySelector("#unity-fullscreen-button").onclick = () => {
+            unityInstance.SetFullscreen(1);
+          };
+        }).catch((message) => {
+          alert("전시장을 불러오는 중 오류가 발생했습니다: " + message);
+        });
+      };
+
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>
